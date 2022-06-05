@@ -1,4 +1,4 @@
-# Java-Alogrithms
+# 数组，链表，栈，队列
 ## 第一题：加一 https://leetcode.cn/problems/plus-one/
 ```java
 class Solution {
