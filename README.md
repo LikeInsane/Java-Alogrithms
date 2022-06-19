@@ -1,74 +1,49 @@
-# 哈希，集合，映射，递归，分治
-## 第一题：子域名访问计数 https://leetcode.cn/problems/subdomain-visit-count/solution/zi-yu-ming-fang-wen-ji-shu-by-leetcode/
+# 树与图，二叉堆，二叉搜索树
+## 第一题：从中序与后序遍历序列构造二叉树 https://leetcode.cn/problems/construct-binary-tree-from-inorder-and-postorder-traversal/
 ```java
 class Solution {
-    public List<String> subdomainVisits(String[] cpdomains) {
-        /**
-        1.构建hash表,格式<String, Integer>，存域名和计数
-        2.先按照正则切割\s+(空格、换行符、回车为分隔线)
-        3.从尾部遍历域名，放到hash表中
-         */
-         Map<String, Integer> domainCounts = new HashMap<>();
-         for(String cpdomain: cpdomains){
-             String[] cp = cpdomain.split("\\s+");
-             String[] domains = cp[1].split("\\.");
-             int count = Integer.valueOf(cp[0]);
-             String cur="";
-             for(int i=domains.length-1; i>=0; i--){
-                 cur = domains[i] + (i < domains.length - 1 ? "." : "") + cur;
-                 domainCounts.put(cur, domainCounts.getOrDefault(cur, 0) + count);
-             }
-         }
-         
-        /**
-        遍历hash输出结果
-         */
-         List<String> res = new ArrayList();
-         for(String dom: domainCounts.keySet()){
-             res.add(domainCounts.get(dom) + " " + dom);
-         }
-         return res;
+    public TreeNode buildTree(int[] inorder, int[] postorder) {
+        this.inorder = inorder;
+        this.postorder = postorder;
+        return build(0, postorder.length-1, 0, inorder.length-1);
+
     }
+
+    TreeNode build(int l1, int r1, int l2, int r2){
+        if(l1 > r1) return null;
+        TreeNode root = new TreeNode(postorder[r1]);
+        int mid = l2;
+        while(inorder[mid]!=root.val) mid++;
+        //左子树中序：l2~mid-1
+        //右子树中序：mid+1~r2
+        root.right=build(l1+(mid-l2), r1-1, mid+1, r2);
+        root.left=build(l1, l1+(mid-l2)-1, l2, mid-1);
+        return root;
+    }
+
+    int[] inorder;
+    int[] postorder;
 }
 ```
 
-## 第二题：数组的度 https://leetcode.cn/problems/degree-of-an-array/
+## 第二题：把二叉搜索树转换为累加树 https://leetcode.cn/problems/convert-bst-to-greater-tree/
 ```java
 class Solution {
-    public int findShortestSubArray(int[] nums) {
-        /** 
-        1.构建一个hash表，value存(出现次数,第一次出现位置，最后一次出现位置)
-        2.如果已存在，则次数+1和更新最后出现位置
-        3.否则新建数组
-        */
-        Map<Integer, int[]> res = new HashMap<>();
-        for(int i=0; i<nums.length; i++){
-            if(res.containsKey(nums[i])){
-                res.get(nums[i])[0]++;
-                res.get(nums[i])[2]=i;
-            }else{
-                res.put(nums[i], new int[]{1, i, i});
-            }
+    private int sum=0;
+    public TreeNode convertBST(TreeNode root) {
+        /**
+         * 题目求等于且大于当前值的节点和，并以此更新当前节点值
+         * 因为bts中序遍历可得到单调递增数组，因此反向中序遍历即可拿到递减数组
+         * 以此累加求和即可
+         * */
+        
+        if(root != null){
+            convertBST(root.right);
+            sum+=root.val;
+            root.val=sum;
+            convertBST(root.left);
         }
-        /** 
-        1.遍历hash表
-        2.如果最大度小于当前度，更新度和最小子数组长度
-        3.如果相等，再判断最小长度是否大于当前子数组长度，是则更新
-        */
-        int maxNums=0;
-        int minLen=0;
-        for(Map.Entry<Integer, int[]> entry : res.entrySet()){
-            int[] arr = entry.getValue();
-            if(maxNums<arr[0]){
-                maxNums=arr[0];
-                minLen=arr[2]-arr[1]+1;
-            }else if (maxNums==arr[0]){
-                if(minLen>arr[2]-arr[1]+1){
-                    minLen=arr[2]-arr[1]+1;
-                }
-            }
-        }
-        return minLen;
+        return root;
     }
 }
 ```
