@@ -1,49 +1,90 @@
-# 树与图，二叉堆，二叉搜索树
-## 第一题：从中序与后序遍历序列构造二叉树 https://leetcode.cn/problems/construct-binary-tree-from-inorder-and-postorder-traversal/
+# 二分
+## 第一题：在 D 天内送达包裹的能力 https://leetcode.cn/problems/capacity-to-ship-packages-within-d-days/submissions/
 ```java
 class Solution {
-    public TreeNode buildTree(int[] inorder, int[] postorder) {
-        this.inorder = inorder;
-        this.postorder = postorder;
-        return build(0, postorder.length-1, 0, inorder.length-1);
+    /**
+    典型二分答案题：找子数组各自和的最大值最小
+     */
+    public int shipWithinDays(int[] weights, int days) {
+        int right = 0;
+        int left = 0;
+        //初始化左右边界
+        for(int weight: weights){
+            left = Math.max(left, weight);
+            right += weight;
+        }
+        //二分查找
+        while(left < right){
+           int mid = (left + right) / 2;
+           if(validate(weights, days, mid)){
+               right = mid;
+           }else{
+               left = mid + 1;
+           }
+        }
+        return right;
 
     }
 
-    TreeNode build(int l1, int r1, int l2, int r2){
-        if(l1 > r1) return null;
-        TreeNode root = new TreeNode(postorder[r1]);
-        int mid = l2;
-        while(inorder[mid]!=root.val) mid++;
-        //左子树中序：l2~mid-1
-        //右子树中序：mid+1~r2
-        root.right=build(l1+(mid-l2), r1-1, mid+1, r2);
-        root.left=build(l1, l1+(mid-l2)-1, l2, mid-1);
-        return root;
+    private boolean validate(int[] weights, int days, int vol){
+        int pack = 0;
+        int count = 1;
+        for(int weight: weights){
+            //如果没有大于vol，就继续往当前package塞
+            if(pack + weight <= vol){
+                pack+=weight;
+            }else{
+                //否则新建一个package
+                count++;
+                pack=weight;
+            }
+        }
+        //没有超过规定天数返回true
+        return count<=days;
     }
-
-    int[] inorder;
-    int[] postorder;
 }
 ```
 
-## 第二题：把二叉搜索树转换为累加树 https://leetcode.cn/problems/convert-bst-to-greater-tree/
+## 第二题：搜索二维矩阵 https://leetcode.cn/problems/search-a-2d-matrix/submissions/
 ```java
 class Solution {
-    private int sum=0;
-    public TreeNode convertBST(TreeNode root) {
-        /**
-         * 题目求等于且大于当前值的节点和，并以此更新当前节点值
-         * 因为bts中序遍历可得到单调递增数组，因此反向中序遍历即可拿到递减数组
-         * 以此累加求和即可
-         * */
-        
-        if(root != null){
-            convertBST(root.right);
-            sum+=root.val;
-            root.val=sum;
-            convertBST(root.left);
+    /**
+    两次二分查找即可
+     */
+    public boolean searchMatrix(int[][] matrix, int target) {
+        //前驱型：找到target可能所在行下标
+        int rowIndex = binarySearchFirstColumn(matrix, target);
+        if (rowIndex < 0) {
+            return false;
         }
-        return root;
+        //前驱型：target是否在该行
+        return binarySearchRow(matrix[rowIndex], target);
+    }
+
+    private int binarySearchFirstColumn(int[][] matrix, int target){
+        int left = -1, right = matrix.length - 1;
+        while (left < right) {
+            int mid = (left + right + 1) / 2;
+            if (matrix[mid][0] <= target) {
+                left = mid;
+            } else {
+                right = mid - 1;
+            }
+        }
+        return right;
+    }
+
+    private boolean binarySearchRow(int[] matrix, int target){
+        int left = -1, right = matrix.length - 1;
+        while (left < right) {
+            int mid = (left + right + 1) / 2;
+            if (matrix[mid] <= target) {
+                left = mid;
+            } else {
+                right = mid - 1;
+            }
+        }
+        return matrix[right] == target;
     }
 }
 ```
