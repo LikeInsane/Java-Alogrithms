@@ -1,90 +1,126 @@
-# 二分
-## 第一题：在 D 天内送达包裹的能力 https://leetcode.cn/problems/capacity-to-ship-packages-within-d-days/submissions/
+# 排序，BFS，DFS
+## 第一题：区间和的个数 https://leetcode.cn/problems/count-of-range-sum/
 ```java
 class Solution {
-    /**
-    典型二分答案题：找子数组各自和的最大值最小
-     */
-    public int shipWithinDays(int[] weights, int days) {
-        int right = 0;
-        int left = 0;
-        //初始化左右边界
-        for(int weight: weights){
-            left = Math.max(left, weight);
-            right += weight;
+    public int countRangeSum(int[] nums, int lower, int upper) {
+        long s = 0;
+        long[] sum = new long[nums.length + 1];
+        for (int i = 0; i < nums.length; ++i) {
+            s += nums[i];
+            sum[i + 1] = s;
         }
-        //二分查找
-        while(left < right){
-           int mid = (left + right) / 2;
-           if(validate(weights, days, mid)){
-               right = mid;
-           }else{
-               left = mid + 1;
-           }
-        }
-        return right;
-
+        return countRangeSumRecursive(sum, lower, upper, 0, sum.length - 1);
     }
 
-    private boolean validate(int[] weights, int days, int vol){
-        int pack = 0;
-        int count = 1;
-        for(int weight: weights){
-            //如果没有大于vol，就继续往当前package塞
-            if(pack + weight <= vol){
-                pack+=weight;
-            }else{
-                //否则新建一个package
-                count++;
-                pack=weight;
+    public int countRangeSumRecursive(long[] sum, int lower, int upper, int left, int right) {
+        if (left == right) {
+            return 0;
+        } else {
+            int mid = (left + right) / 2;
+            int n1 = countRangeSumRecursive(sum, lower, upper, left, mid);
+            int n2 = countRangeSumRecursive(sum, lower, upper, mid + 1, right);
+            int ret = n1 + n2;
+
+            // 首先统计下标对的数量
+            int i = left;
+            int l = mid + 1;
+            int r = mid + 1;
+            while (i <= mid) {
+                while (l <= right && sum[l] - sum[i] < lower) {
+                    l++;
+                }
+                while (r <= right && sum[r] - sum[i] <= upper) {
+                    r++;
+                }
+                ret += r - l;
+                i++;
             }
+
+            // 随后合并两个排序数组
+            long[] sorted = new long[right - left + 1];
+            int p1 = left, p2 = mid + 1;
+            int p = 0;
+            while (p1 <= mid || p2 <= right) {
+                if (p1 > mid) {
+                    sorted[p++] = sum[p2++];
+                } else if (p2 > right) {
+                    sorted[p++] = sum[p1++];
+                } else {
+                    if (sum[p1] < sum[p2]) {
+                        sorted[p++] = sum[p1++];
+                    } else {
+                        sorted[p++] = sum[p2++];
+                    }
+                }
+            }
+            for (int j = 0; j < sorted.length; j++) {
+                sum[left + j] = sorted[j];
+            }
+            return ret;
         }
-        //没有超过规定天数返回true
-        return count<=days;
     }
 }
 ```
 
-## 第二题：搜索二维矩阵 https://leetcode.cn/problems/search-a-2d-matrix/submissions/
+## 第二题：被围绕的区域 https://leetcode.cn/problems/surrounded-regions/submissions/
 ```java
 class Solution {
-    /**
-    两次二分查找即可
-     */
-    public boolean searchMatrix(int[][] matrix, int target) {
-        //前驱型：找到target可能所在行下标
-        int rowIndex = binarySearchFirstColumn(matrix, target);
-        if (rowIndex < 0) {
-            return false;
-        }
-        //前驱型：target是否在该行
-        return binarySearchRow(matrix[rowIndex], target);
-    }
+    int[] dx = {-1, 0, 0, 1};
+    int[] dy = {0, -1, 1, 0};
 
-    private int binarySearchFirstColumn(int[][] matrix, int target){
-        int left = -1, right = matrix.length - 1;
-        while (left < right) {
-            int mid = (left + right + 1) / 2;
-            if (matrix[mid][0] <= target) {
-                left = mid;
-            } else {
-                right = mid - 1;
+    public void solve(char[][] board) {
+        //初始化
+        int n = board.length;
+        if (n == 0) {
+            return;
+        }
+        int m = board[0].length;
+        Queue<int[]> queue = new LinkedList<int[]>();
+        //先给边界O打上标记
+        for (int i = 0; i < n; i++) {
+            if (board[i][0] == 'O') {
+                queue.offer(new int[]{i, 0});
+                board[i][0] = 'A';
+            }
+            if (board[i][m - 1] == 'O') {
+                queue.offer(new int[]{i, m - 1});
+                board[i][m - 1] = 'A';
             }
         }
-        return right;
-    }
-
-    private boolean binarySearchRow(int[] matrix, int target){
-        int left = -1, right = matrix.length - 1;
-        while (left < right) {
-            int mid = (left + right + 1) / 2;
-            if (matrix[mid] <= target) {
-                left = mid;
-            } else {
-                right = mid - 1;
+        for (int i = 1; i < m - 1; i++) {
+            if (board[0][i] == 'O') {
+                queue.offer(new int[]{0, i});
+                board[0][i] = 'A';
+            }
+            if (board[n - 1][i] == 'O') {
+                queue.offer(new int[]{n - 1, i});
+                board[n - 1][i] = 'A';
             }
         }
-        return matrix[right] == target;
+        //因为没有被包围的O都与边界O直接或简介相连
+        //所以BFS找到这些O也打上标记
+        while (!queue.isEmpty()) {
+            int[] cell = queue.poll();
+            int x = cell[0], y = cell[1];
+            for (int i = 0; i < 4; i++) {
+                int mx = x + dx[i], my = y + dy[i];
+                if (mx < 0 || my < 0 || mx >= n || my >= m || board[mx][my] != 'O') {
+                    continue;
+                }
+                queue.offer(new int[]{mx, my});
+                board[mx][my] = 'A';
+            }
+        }
+        //遍历矩阵，没有被标记过的O即为被包围的
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < m; j++) {
+                if (board[i][j] == 'A') {
+                    board[i][j] = 'O';
+                } else if (board[i][j] == 'O') {
+                    board[i][j] = 'X';
+                }
+            }
+        }
     }
 }
 ```
