@@ -1,49 +1,41 @@
-# 贪心，动规（一）
-## 第一题：爬楼梯 https://leetcode.cn/problems/climbing-stairs/
+# 动规（二）
+## 第一题：跳跃游戏 https://leetcode.cn/problems/jump-game/
 ```java
 class Solution {
-    public int climbStairs(int n) {
-        //状态转移方程：f(n) = f(n-1) + f(n-2)
-        int[] dp = new int[n+1];
-        dp[0] = 1;
-        dp[1] = 1; 
-        for(int i=2;i<=n;i++){
-            dp[i] = dp[i-1] + dp[i-2];
+    public boolean canJump(int[] nums) {
+        //公示：y：数组下标，x：当前位置，nums[i]：跳跃距离
+        //rightMost>=nums.length-1，return true
+        int rightMost = 0;
+        for(int i=0;i<nums.length; i++){
+            if(i<=rightMost){
+                rightMost = Math.max(rightMost, i+nums[i]);
+                if(rightMost>=nums.length-1){
+                    return true;
+                }
+            }
         }
-        return dp[n];
+        return false;
     }
 }
 ```
 
-## 第二题：最长递增子序列的个数 https://leetcode.cn/problems/number-of-longest-increasing-subsequence/
+## 第二题：跳跃游戏 II https://leetcode.cn/problems/jump-game-ii/
 ```java
 class Solution {
-    public int findNumberOfLIS(int[] nums) {
-        //状态转移方程：dp[i]=max(dp[j])+1,其中0≤j<i且num[j]<num[i]
-        int n = nums.length, maxLen = 0, ans = 0;
-        int[] dp = new int[n];
-        int[] cnt = new int[n];
-        for (int i = 0; i < n; ++i) {
-            dp[i] = 1;
-            cnt[i] = 1;
-            for (int j = 0; j < i; ++j) {
-                if (nums[i] > nums[j]) {
-                    if (dp[j] + 1 > dp[i]) {
-                        dp[i] = dp[j] + 1;
-                        cnt[i] = cnt[j]; // 重置计数
-                    } else if (dp[j] + 1 == dp[i]) {
-                        cnt[i] += cnt[j];
-                    }
+    public int jump(int[] nums){
+        //dp公式：f(n)=min{f(i),1+f(i+j)}
+        int[] dp=new int[nums.length];
+        //base case
+        dp[dp.length-1]=0;
+        for (int i=nums.length-2;i>=0;i--){
+            dp[i] = 1 << 31 - 1;//代替Integer.MAX_VALUE,防止溢出
+            for (int j=1;j <= nums[i];j++){
+                if (i+j<nums.length){
+                    dp[i]=Math.min(dp[i],1+dp[i+j]);
                 }
             }
-            if (dp[i] > maxLen) {
-                maxLen = dp[i];
-                ans = cnt[i]; // 重置计数
-            } else if (dp[i] == maxLen) {
-                ans += cnt[i];
-            }
         }
-        return ans;
+        return dp[0];
     }
 }
 ```
