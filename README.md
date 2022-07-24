@@ -1,41 +1,125 @@
-# 动规（二）
-## 第一题：跳跃游戏 https://leetcode.cn/problems/jump-game/
+# 字典树，并查集
+## 第一题：冗余连接 https://leetcode.cn/problems/redundant-connection/
 ```java
 class Solution {
-    public boolean canJump(int[] nums) {
-        //公示：y：数组下标，x：当前位置，nums[i]：跳跃距离
-        //rightMost>=nums.length-1，return true
-        int rightMost = 0;
-        for(int i=0;i<nums.length; i++){
-            if(i<=rightMost){
-                rightMost = Math.max(rightMost, i+nums[i]);
-                if(rightMost>=nums.length-1){
-                    return true;
-                }
+    public int[] findRedundantConnection(int[][] edges) {
+        //并查集实现
+        int n = edges.length;
+        int[] parent = new int[n + 1];
+        for (int i = 1; i <= n; i++) {
+            parent[i] = i;
+        }
+        for (int i = 0; i < n; i++) {
+            int[] edge = edges[i];
+            int node1 = edge[0], node2 = edge[1];
+            //不同联通分量，合并
+            if (find(parent, node1) != find(parent, node2)) {
+                union(parent, node1, node2);
+            } else {
+                //相同连通分量，直接返回结果
+                return edge;
             }
         }
-        return false;
+        return new int[0];
+    }
+
+    public void union(int[] parent, int index1, int index2) {
+        parent[find(parent, index1)] = find(parent, index2);
+    }
+
+    public int find(int[] parent, int index) {
+        if (parent[index] != index) {
+            parent[index] = find(parent, parent[index]);
+        }
+        return parent[index];
     }
 }
 ```
 
-## 第二题：跳跃游戏 II https://leetcode.cn/problems/jump-game-ii/
+## 第二题：岛屿数量 https://leetcode.cn/problems/number-of-islands/submissions/
 ```java
 class Solution {
-    public int jump(int[] nums){
-        //dp公式：f(n)=min{f(i),1+f(i+j)}
-        int[] dp=new int[nums.length];
-        //base case
-        dp[dp.length-1]=0;
-        for (int i=nums.length-2;i>=0;i--){
-            dp[i] = 1 << 31 - 1;//代替Integer.MAX_VALUE,防止溢出
-            for (int j=1;j <= nums[i];j++){
-                if (i+j<nums.length){
-                    dp[i]=Math.min(dp[i],1+dp[i+j]);
+    //并查集：结果=连通分量数目
+    class UnionFind {
+        int count;
+        int[] parent;
+        int[] rank;
+
+        public UnionFind(char[][] grid) {
+            count = 0;
+            int m = grid.length;
+            int n = grid[0].length;
+            parent = new int[m * n];
+            rank = new int[m * n];
+            for (int i = 0; i < m; ++i) {
+                for (int j = 0; j < n; ++j) {
+                    if (grid[i][j] == '1') {
+                        parent[i * n + j] = i * n + j;
+                        ++count;
+                    }
+                    rank[i * n + j] = 0;
                 }
             }
         }
-        return dp[0];
+
+        public int find(int i) {
+            //路径压缩
+            if (parent[i] != i) parent[i] = find(parent[i]);
+            return parent[i];
+        }
+
+        public void union(int x, int y) {
+            //秩序合并
+            int rootx = find(x);
+            int rooty = find(y);
+            if (rootx != rooty) {
+                if (rank[rootx] > rank[rooty]) {
+                    parent[rooty] = rootx;
+                } else if (rank[rootx] < rank[rooty]) {
+                    parent[rootx] = rooty;
+                } else {
+                    parent[rooty] = rootx;
+                    rank[rootx] += 1;
+                }
+                --count;
+            }
+        }
+
+        public int getCount() {
+            return count;
+        }
+    }
+
+    public int numIslands(char[][] grid) {
+        if (grid == null || grid.length == 0) {
+            return 0;
+        }
+
+        int nr = grid.length;
+        int nc = grid[0].length;
+        int num_islands = 0;
+        UnionFind uf = new UnionFind(grid);
+        for (int r = 0; r < nr; ++r) {
+            for (int c = 0; c < nc; ++c) {
+                if (grid[r][c] == '1') {
+                    grid[r][c] = '0';
+                    if (r - 1 >= 0 && grid[r-1][c] == '1') {
+                        uf.union(r * nc + c, (r-1) * nc + c);
+                    }
+                    if (r + 1 < nr && grid[r+1][c] == '1') {
+                        uf.union(r * nc + c, (r+1) * nc + c);
+                    }
+                    if (c - 1 >= 0 && grid[r][c-1] == '1') {
+                        uf.union(r * nc + c, r * nc + c - 1);
+                    }
+                    if (c + 1 < nc && grid[r][c+1] == '1') {
+                        uf.union(r * nc + c, r * nc + c + 1);
+                    }
+                }
+            }
+        }
+
+        return uf.getCount();
     }
 }
 ```
