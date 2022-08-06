@@ -1,38 +1,60 @@
-# 字符串处理
-## 第一题：字符串中的第一个唯一字符 https://leetcode.cn/problems/first-unique-character-in-a-string/
+# 高级搜索
+## 第一题：二进制矩阵中的最短路径 https://leetcode.cn/problems/shortest-path-in-binary-matrix/
 ```java
 class Solution {
-    public int firstUniqChar(String s) {
-        //找字符下标前后出现次数是否一样，相同返回下标值，否则-1
-        for(char c: s.toCharArray()){
-            if(s.indexOf(c) == s.lastIndexOf(c)){
-                return s.indexOf(c);
+    private static int[][] directions = {{0,1}, {0, -1}, {1, -1}, {1, 0}, {1, 1}, {-1, -1}, {-1, 0}, {-1, 1}};
+    private int row, col;
+    public int shortestPathBinaryMatrix(int[][] grid) {
+        row = grid.length;
+        col = grid[0].length;
+        if(grid[0][0] == 1 || grid[row - 1][col - 1] == 1) return -1;
+        Queue<int[]> pos = new LinkedList<>();
+        grid[0][0] = 1; // 直接用grid[i][j]记录从起点到这个点的最短路径长。按照题意 起点也有长度1
+        pos.add(new int[]{0,0});
+        while(!pos.isEmpty() && grid[row - 1][col - 1] == 0){ // 求最短路径 使用BFS
+            int[] xy = pos.remove();
+            int preLength = grid[xy[0]][xy[1]]; // 当前点的路径长度
+            for(int i = 0; i < 8; i++){
+                int newX = xy[0] + directions[i][0];
+                int newY = xy[1] + directions[i][1];
+                if(inGrid(newX, newY) && grid[newX][newY] == 0){
+                    pos.add(new int[]{newX, newY});
+                    grid[newX][newY] = preLength + 1; // 下一个点的路径长度要+1
+                }
             }
         }
-        return -1;
+        return grid[row - 1][col - 1] == 0 ? -1 : grid[row - 1][col - 1]; // 如果最后终点的值还是0，说明没有到达
+    }
+
+    private boolean inGrid(int x, int y){
+        return x >= 0 && x < row && y >= 0 && y < col;
     }
 }
 ```
 
-## 第二题：最长公共前缀 https://leetcode.cn/problems/longest-common-prefix/
+## 第二题：滑动窗口最大值 https://leetcode.cn/problems/sliding-window-maximum/
 ```java
 class Solution {
-    public String longestCommonPrefix(String[] strs) {
-        //按列比较每个字符，当当前列不满足时，就返回之前的最长公共前缀
-        if (strs == null || strs.length == 0) {
-            return "";
-        }
-        int length = strs[0].length();
-        int count = strs.length;
-        for (int i = 0; i < length; i++) {
-            char c = strs[0].charAt(i);
-            for (int j = 1; j < count; j++) {
-                if (i == strs[j].length() || strs[j].charAt(i) != c) {
-                    return strs[0].substring(0, i);
-                }
+    public int[] maxSlidingWindow(int[] nums, int k) {
+        int n = nums.length;
+        PriorityQueue<int[]> pq = new PriorityQueue<int[]>(new Comparator<int[]>() {
+            public int compare(int[] pair1, int[] pair2) {
+                return pair1[0] != pair2[0] ? pair2[0] - pair1[0] : pair2[1] - pair1[1];
             }
+        });
+        for (int i = 0; i < k; ++i) {
+            pq.offer(new int[]{nums[i], i});
         }
-        return strs[0];
+        int[] ans = new int[n - k + 1];
+        ans[0] = pq.peek()[0];
+        for (int i = k; i < n; ++i) {
+            pq.offer(new int[]{nums[i], i});
+            while (pq.peek()[1] <= i - k) {
+                pq.poll();
+            }
+            ans[i - k + 1] = pq.peek()[0];
+        }
+        return ans;
     }
 }
 ```
